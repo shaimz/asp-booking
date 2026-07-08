@@ -9,43 +9,39 @@ type FetchAvailableBookingSlotsError =
   | "ErrorInvalidResponseAspUrl"
   | "ErrorUnknownAspUrl";
 
+function returnError() {
+    return {
+      ok: false,
+      error: "ErrorMissingConfigApiUrl",
+    };
+}
+
 export const fetchAvailableBookingSlots = async (): Promise<
   Result<BookingSlots, FetchAvailableBookingSlotsError>
 > => {
   const url = process.env.ASP_URL;
 
   if (!url) {
-    return {
-      ok: false,
-      error: "ErrorMissingConfigApiUrl",
-    };
+    return returnError();
   }
 
   try {
     const response = await fetch(url);
 
     if (!response.ok) {
-      return {
-        ok: false,
-        error: "ErrorRequestFailedAspUrl",
-      };
+      return returnError();
     }
 
     const json = await response.json();
     const result = BookingSlotsSchema(json);
 
-    if (result instanceof type.errors) {
-      return {
-        ok: false,
-        error: "ErrorInvalidResponseAspUrl",
-      };
+    if (!result instanceof type.errors) {
+      return { ok: true, data: result };
     }
+    
+    return returnError();
 
-    return { ok: true, data: result };
   } catch (error) {
-    return {
-      ok: false,
-      error: "ErrorUnknownAspUrl",
-    };
+    return returnError();
   }
 };
